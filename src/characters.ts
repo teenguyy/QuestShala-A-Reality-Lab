@@ -19,7 +19,7 @@ export interface LearningCharacter {
 
 export const learningCharacters: readonly LearningCharacter[] = [
   {
-    id: "berrus",
+    id: "Berrus",
     name: "berrus",
     buttonLabel: "berrus",
     title: "The Companion",
@@ -212,9 +212,17 @@ export const learningCharacters: readonly LearningCharacter[] = [
   },
 ] as const;
 
-export const defaultCharacterId: LearningCharacterId = "berrus";
+export const defaultCharacterId: LearningCharacterId = "Berrus";
 
 export function getLearningCharacter(id?: string | null): LearningCharacter {
-  return learningCharacters.find((character) => character.id === id) ??
+  return learningCharacters.find((character) => character.id.toLowerCase() === id?.toLowerCase()) ??
     learningCharacters.find((character) => character.id === defaultCharacterId)!;
+}
+
+export function characterAssetPath(id?: string | null): string {
+  return `/companions/${getLearningCharacter(id).id.toLowerCase()}.webp`;
+}
+
+export function characterStorageId(id?: string | null): string {
+  return getLearningCharacter(id).id.toLowerCase();
 }

@@ -120,11 +120,14 @@ function createProfile(input: Omit<StudentProfile, "id">, id: string = crypto.ra
 
 function App() {
   const [data, setData] = useState<AppData>(() => {
-    const guestData = readGuestData();
+    const guestData = supabase ? defaultData : readGuestData();
     return { ...guestData, rewards: readRewards("guest", guestData.rewards) };
   });
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [accountLoadError, setAccountLoadError] = useState("");
+  const [accountRetry, setAccountRetry] = useState(0);
   const [authMode, setAuthMode] = useState<"signin" | "signup">(() => authModeForPath(window.location.pathname));
   const [authError, setAuthError] = useState("");
   const [notice, setNotice] = useState("");
@@ -158,25 +161,28 @@ function App() {
       return;
     }
     let active = true;
-    supabase.auth.getSession().then(async ({ data: result, error }) => {
-      if (error) throw error;
+    const applySession = (userId: string | null) => {
       if (!active) return;
-      const user = result.session?.user;
-      setSessionUserId(user?.id ?? null);
-      if (user) {
-        const remote = await fetchStudentData(user.id);
-        if (active) setData({ ...defaultData, ...remote, profile: remote.profile ?? null, rewards: readRewards(user.id) });
+      setSessionUserId(userId);
+      setLoading(false);
+      if (!userId) {
+        setData(defaultData);
+        setLoadedUserId(null);
+        setAccountLoadError("");
       }
-      if (active) setLoading(false);
-    }).catch((error: unknown) => {
-      console.error("Could not load the signed-in student session.", error);
+    };
+    // Keep this callback synchronous: Supabase auth methods can deadlock inside it.
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session?.user.id ?? null);
+    });
+    supabase.auth.getSession().then(({ data: result, error }) => {
+      if (error) throw error;
+      applySession(result.session?.user.id ?? null);
+    }).catch(() => {
       if (active) {
-        setAuthError("We couldn't connect to your account. Check your connection and try again.");
+        setAccountLoadError("We couldn't restore your account. Check your connection and reload the page.");
         setLoading(false);
       }
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionUserId(session?.user.id ?? null);
     });
     return () => {
       active = false;
@@ -184,27 +190,33 @@ function App() {
     };
   }, []);
 
-  // AuthPage performs its own Supabase sign-in; reload the private profile whenever that session changes.
+  // Load only the current account and discard results after a session change.
   useEffect(() => {
-    if (!supabase || !sessionUserId || data.profile?.id === sessionUserId) return;
+    if (!supabase || !sessionUserId) return;
     let active = true;
+    setAccountLoadError("");
+    setData(defaultData);
     fetchStudentData(sessionUserId).then((remote) => {
       if (active) setData({ ...defaultData, ...remote, profile: remote.profile ?? null, rewards: readRewards(sessionUserId) });
-    }).catch((error: unknown) => {
-      console.error("Could not refresh the signed-in student's learning data.", error);
-      if (active) setAuthError("Your account is signed in, but the learning profile could not be loaded. Check the Supabase migrations and try again.");
+    }).catch((error: { code?: string }) => {
+      if (active) setAccountLoadError(error.code === "PGRST205" || error.code === "42P01"
+        ? "Sign-in worked, but this site's account storage hasn't been set up yet. The site owner needs to finish account setup before you can continue."
+        : "You're signed in, but your learning data couldn't be loaded. Retry to reconnect to your account.");
+    }).finally(() => {
+      if (active) setLoadedUserId(sessionUserId);
     });
     return () => { active = false; };
-  }, [sessionUserId, data.profile?.id]);
+  }, [sessionUserId, accountRetry]);
 
   useEffect(() => {
     try {
+      if (supabase && (!sessionUserId || loadedUserId !== sessionUserId)) return;
       localStorage.setItem(`QuestShala-rewards:${sessionUserId ?? "guest"}`, JSON.stringify(data.rewards));
     } catch (error) {
       console.error("Could not save the reward ledger on this device.", error);
       setNotice("Reward changes were made, but this device could not save them.");
     }
-  }, [data.rewards, sessionUserId]);
+  }, [data.rewards, sessionUserId, loadedUserId]);
   useEffect(() => {
     if (!supabase) {
       try {
@@ -531,6 +543,7 @@ function App() {
       showNotice("You left guest mode. Your learning history remains saved on this device.");
     }
     setShowSetup(false);
+    setAccountLoadError("");
     setMenuOpen(false);
     navigate("/auth/signin");
   }
@@ -556,11 +569,13 @@ function App() {
     }, 700);
   }
 
-  if (loading) return <div className="loading-screen" role="status">Loading your learning space…</div>;
   const authRoute = ({
     "/login": "login", "/signup": "signup", "/forgot-password": "forgot-password",
     "/reset-password": "reset-password", "/auth/callback": "callback",
   } as const)[location.pathname as "/login" | "/signup" | "/forgot-password" | "/reset-password" | "/auth/callback"];
+  if (authRoute && authRoute !== "login" && authRoute !== "signup") return <AuthPage page={authRoute} />;
+  if (accountLoadError) return <main className="account-reconnect"><span className="eyebrow">ACCOUNT CONNECTION</span><h1>Let’s reconnect.</h1><p role="alert">{accountLoadError}</p><button className="btn violet" onClick={() => { if (!sessionUserId) window.location.reload(); else { setLoadedUserId(null); setAccountRetry((value) => value + 1); } }}>Try again</button><button className="btn outline" onClick={() => void signOut()}>Return to sign in</button></main>;
+  if (loading || (sessionUserId && loadedUserId !== sessionUserId)) return <div className="loading-screen" role="status">Loading your learning space…</div>;
   if (authRoute) {
     if (sessionUserId && (authRoute === "login" || authRoute === "signup")) return <Navigate to={profile ? "/dashboard" : "/auth/signup"} replace />;
     return <AuthPage page={authRoute} />;
@@ -575,6 +590,7 @@ function App() {
   if (!profile && location.pathname === "/feedback") {
     return <main className="public-feedback-shell"><Link className="brand" to="/"><span className="brand-mark">Q</span><span>{BRAND.name}</span></Link><FeedbackPage initialFeature={searchParams.get("feature") ?? "Login / Sign up"} junior={false} signedIn={false} /></main>;
   }
+  if (sessionUserId && !profile && !legacyAuthPath) return <Navigate to="/auth/signup" replace />;
   if (!profile && !showSetup) {
     return (
       <>
@@ -670,6 +686,7 @@ function App() {
             <Route path="/" element={<><DailyRewardCard sessionUserId={sessionUserId} rewards={data.rewards} onClaim={claimLoginReward} /><ProfileRewardsSummary profile={profile} rewards={data.rewards} activities={data.activities} /><HomePage profile={profile} activities={data.activities} topics={lessonTopics} /></>} />
             <Route path="/dashboard" element={<><DailyRewardCard sessionUserId={sessionUserId} rewards={data.rewards} onClaim={claimLoginReward} /><ProfileRewardsSummary profile={profile} rewards={data.rewards} activities={data.activities} /><HomePage profile={profile} activities={data.activities} topics={lessonTopics} /></>} />
             <Route path="/kingdom" element={<KingdomMapPage profile={profile} activities={data.activities} topics={lessonTopics} />} />
+            <Route path="/map" element={<Navigate to="/kingdom" replace />} />
             <Route path="/syllabus" element={<SyllabusPage profile={profile} topics={lessonTopics} curriculum={curriculum} onBoard={(board) => updateProfile({ ...profile, board })} onTopic={(id) => navigate(`/topic/${id}`)} onCurriculumTopic={(subject, title) => navigate(`/topic/unavailable?subject=${encodeURIComponent(subject)}&title=${encodeURIComponent(title)}`)} />} />
             <Route path="/topic/:topicId" element={<TopicPage profile={profile} recordActivity={recordActivity} topics={lessonTopics} />} />
             <Route path="/lessons" element={<SyllabusPage profile={profile} topics={lessonTopics} curriculum={curriculum} onBoard={(board) => updateProfile({ ...profile, board })} onTopic={(id) => navigate(`/topic/${id}`)} onCurriculumTopic={(subject, title) => navigate(`/topic/unavailable?subject=${encodeURIComponent(subject)}&title=${encodeURIComponent(title)}`)} lessonsOnly />} />
@@ -793,6 +810,7 @@ function BuddyDock({ profile, pathname, topics }: {
 }) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<{ by: "student" | "buddy"; text: string }[]>([]);
   const [mood, setMood] = useState<"awake" | "sleeping" | "snacking">("awake");
   const search = new URLSearchParams(location.search);
@@ -822,7 +840,8 @@ function BuddyDock({ profile, pathname, topics }: {
   event.preventDefault();
 
   const text = question.trim();
-  if (!text) return;
+  if (!text || sending) return;
+  setSending(true);
 
   setMood("awake");
 
@@ -836,13 +855,13 @@ function BuddyDock({ profile, pathname, topics }: {
 
   try {
     const response = await fetch(
-      "http://localhost:3001/api/chat",
+      "/api/chat",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, characterId: profile?.selectedCharacterId ?? defaultCharacterId })
       }
     );
 
@@ -850,6 +869,9 @@ function BuddyDock({ profile, pathname, topics }: {
 
     if (!response.ok) {
       throw new Error(data.error || "AI request failed");
+    }
+    if (typeof data.reply !== "string" || !data.reply.trim()) {
+      throw new Error("The AI returned an empty answer. Please try again.");
     }
 
     setMessages((items) => [
@@ -867,9 +889,11 @@ function BuddyDock({ profile, pathname, topics }: {
       ...items,
       {
         by: "buddy",
-        text: "I'm having trouble connecting right now. Please try again!"
+        text: error instanceof Error ? error.message : "I'm having trouble connecting right now. Please try again!"
       }
     ]);
+  } finally {
+    setSending(false);
   }
 }
   return (
@@ -879,8 +903,9 @@ function BuddyDock({ profile, pathname, topics }: {
         <div className="buddy-thread" aria-live="polite">
           {!messages.length && <div className="buddy-chat-intro"><strong>{buddy.id === "berrus" ? buddy.greeting : "Hi! What are you learning?"}</strong><p>{topic ? `We're ready to explore ${topic.title}.` : "Ask about lessons, notes, games, or your learning path."}</p><small>Ask berrus anything about your learning.</small></div>}
           {messages.map((message, index) => <p className={`chat-bubble ${message.by}`} key={`${index}-${message.text}`}>{message.text}</p>)}
+          {sending && <p className="chat-bubble buddy" role="status">Thinking through your question…</p>}
         </div>
-        <form className="chat-form" onSubmit={send}><input aria-label="Message your buddy" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question…" /><button className="btn violet" aria-label="Send message"><Send size={16} /></button></form>
+        <form className="chat-form" onSubmit={send}><input aria-label="Message your buddy" value={question} maxLength={8000} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question…" /><button className="btn violet" aria-label={sending ? "Waiting for reply" : "Send message"} disabled={sending || !question.trim()}><Send size={16} /></button></form>
       </section>}
       <button className={`buddy-launcher ${open ? "active" : ""}`} onClick={() => { setMood("awake"); setOpen((value) => !value); }} aria-label={open ? "Close buddy" : "Open learning buddy"} aria-expanded={open}>
         <span className={`buddy-launcher-face buddy-mood-${mood}`} aria-label={getLearningCharacter(profile?.selectedCharacterId).name}><CompanionAvatar id={profile?.selectedCharacterId ?? defaultCharacterId} size="small" /></span><span className="buddy-launcher-label">{open ? "Close" : "Ask buddy"}</span><MessageCircle className="buddy-launcher-icon" size={17} />

@@ -7,6 +7,7 @@ import "./design-system.css";
 import "./rewards-simulations.css";
 import "./kingdom.css";
 import "./feature-pages.css";
+import "./atlas.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

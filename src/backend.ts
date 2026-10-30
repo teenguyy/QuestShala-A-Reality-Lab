@@ -1,15 +1,27 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Activity, Note, StudentProfile } from "./types";
 import type { FeedbackEntry } from "./feedback";
-import { defaultCharacterId, getLearningCharacter } from "./characters";
+import { characterStorageId, defaultCharacterId, getLearningCharacter } from "./characters";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 export const supabase: SupabaseClient | null =
   url && anonKey ? createClient(url, anonKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   }) : null;
+
+export async function getGoogleSignInAvailability(signal: AbortSignal): Promise<boolean> {
+  if (!url || !anonKey) return false;
+  try {
+    const response = await fetch(new URL("/auth/v1/settings", url), { headers: { apikey: anonKey }, signal });
+    if (!response.ok) return false;
+    const settings = await response.json();
+    return settings.external?.google === true;
+  } catch {
+    return false;
+  }
+}
 
 export interface StudentData {
   profile: StudentProfile;
@@ -93,7 +105,7 @@ export async function saveProfile(profile: StudentProfile): Promise<void> {
     selected_exams: profile.grade >= 9 ? profile.exams : [],
     buddy: profile.buddy,
     buddy_name: profile.buddyName,
-    selected_character_id: getLearningCharacter(profile.selectedCharacterId ?? defaultCharacterId).id,
+    selected_character_id: characterStorageId(profile.selectedCharacterId ?? defaultCharacterId),
     voice: profile.voice,
     preferred_language: profile.preferredLanguage ?? "English",
     onboarding_complete: true,
