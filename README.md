@@ -17,7 +17,7 @@ Without Supabase environment variables, the app opens in **local demo mode**. Pr
 
 1. Create a Supabase project and open **Project Settings → API**.
 2. Copy `.env.example` to `.env.local`. Set `VITE_SUPABASE_URL` to the project URL and `VITE_SUPABASE_ANON_KEY` to its publishable/anon key. These are the only Supabase values used by the browser. Never expose a service-role key.
-3. Apply `supabase/migrations/001_learnquest.sql`, `002_profile_consent_feedback.sql`, `003_auth_profiles.sql`, `004_learning_characters.sql`, and `005_expand_learning_characters.sql` in order (for example, in the Supabase SQL Editor). The migrations create private student tables, their ownership-based RLS policies, a database trigger that creates a profile row for every new Auth user, and the constrained `selected_character_id` profile field. Existing profiles without a selection are assigned `Beerus`.
+3. Apply `supabase/migrations/001_learnquest.sql`, `002_profile_consent_feedback.sql`, `003_auth_profiles.sql`, `004_learning_characters.sql`, and `005_expand_learning_characters.sql` in order (for example, in the Supabase SQL Editor). The migrations create private student tables, their ownership-based RLS policies, a database trigger that creates a profile row for every new Auth user, and the constrained `selected_character_id` profile field. Existing profiles without a selection are assigned `berrus`.
 4. In **Authentication → URL Configuration**, set the Site URL to your production app origin and add the exact development and production redirect URLs:
    - `http://localhost:5173/auth/callback`
    - `http://localhost:5173/reset-password`
@@ -40,7 +40,7 @@ Auth configuration checks:
 - If Zen, Luna, Kai, Sora, Rex, or Miko is rejected, apply migration `005_expand_learning_characters.sql` after `004_learning_characters.sql`.
 - Authentication provider setup and actual email delivery must be verified in the target Supabase/Google projects; a successful frontend build does not verify them.
 
-The Supabase publishable/anon key is intended for browser use; never put a service-role key in the frontend. The Groq key belongs only in `server/.env`, which is ignored by Git. Beerus calls the local Express API at `http://localhost:3001/api/chat`; keep the API server running while testing chat locally.
+The Supabase publishable/anon key is intended for browser use; never put a service-role key in the frontend. The Groq key belongs only in `server/.env`, which is ignored by Git. berrus calls the local Express API at `http://localhost:3001/api/chat`; keep the API server running while testing chat locally.
 
 ## Implemented in this build
 
@@ -56,7 +56,7 @@ The Supabase publishable/anon key is intended for browser use; never put a servi
 - Activity history and basic progress calculated from recorded events.
 - Topic game studio for authored topics: a five-round quiz, memory cards, and an interactive step-order puzzle.
 - A floating contextual buddy on the landing, setup, and student pages, customizable buddy character/name, and best-effort browser speech.
-- Twelve selectable learning companion profiles (Beerus, Wizzy, Professor Nova, Shadow, Ember, Astra, Zen, Luna, Kai, Sora, Rex, Miko) with portrait artwork, previews, class suitability, persistent Supabase selection, first-sign-in selection, profile switching and character-aware assistant display.
+- Twelve selectable learning companion profiles (berrus, Wizzy, Professor Nova, Shadow, Ember, Astra, Zen, Luna, Kai, Sora, Rex, Miko) with portrait artwork, previews, class suitability, persistent Supabase selection, first-sign-in selection, profile switching and character-aware assistant display.
 - Imported Mathematics worked-problem bank for Classes 8–12, with searchable difficulty/topic filters and step-by-step source solutions.
 - Camera study scanner with rear-camera capture, mobile image upload, image compression, optional browser text recognition, manual note editing and save-to-Notes flow. Automatic OCR depends on browser support; the image-save workflow does not.
 - Uploaded question library with 222,880 question/answer/context rows for Classes 6–12, stored in compressed, lazily loaded batches. Practice Zone links to an eight-minute randomized self-check test, and completed results can be added to learning history.
@@ -85,7 +85,7 @@ This update adds:
 - A shared Fantasy Kingdom RPG presentation across all classes, centrally configured by class tier (Classes 1–5 high, 6–8 medium, 9–12 low-to-medium motion), with system reduced-motion support and a persistent Focus Mode.
 - A game dashboard and interactive Kingdom Map connected to existing curriculum, lessons, notes, practice, history, XP, streak, rank, points and shop routes. Progress is based on recorded student activity; map locations remain open because progression locks are not implemented.
 - Original CSS castle/map scenery. No third-party animation assets are included; see [docs/ASSET_LICENSES.md](./docs/ASSET_LICENSES.md).
-- The existing app brand tagline and Beerus Buddy identity requested in the redesign brief.
+- The existing app brand tagline and berrus Buddy identity requested in the redesign brief.
 - An all-screen hamburger navigation drawer that closes after selecting a destination.
 - Optimistic profile updates: the app returns to Home immediately while remote profile sync continues in the background.
 - A learning homepage with an interactive product-tour panel and connected learning workflow cards using original styling and copy.

@@ -57,8 +57,8 @@ function authModeForPath(pathname: string): "signin" | "signup" {
 function normalizeProfile(profile: StudentProfile): StudentProfile {
   return {
     ...profile,
-    buddy: profile.buddy === "Beerus" ? "beerus" : profile.buddy,
-    buddyName: profile.buddyName === "Beerus" ? "Beerus" : profile.buddyName,
+    buddy: profile.buddy === "berrus" ? "berrus" : profile.buddy,
+    buddyName: profile.buddyName === "berrus" ? "berrus" : profile.buddyName,
   };
 }
 
@@ -230,7 +230,7 @@ function App() {
     root.dataset.theme = activeTheme;
     root.dataset.skin = shopSkin;
     root.dataset.avatar = shopAvatar;
-    root.dataset.buddy = profile?.buddy ?? "beerus";
+    root.dataset.buddy = profile?.buddy ?? "berrus";
     root.dataset.selectedCharacter = profile?.selectedCharacterId ?? defaultCharacterId;
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (themeColor) themeColor.content = activeTheme === "dark" ? "#102923" : "#E8DFC9";
@@ -287,8 +287,8 @@ function App() {
       grade: Number(form.get("grade") ?? 4),
       board: String(form.get("board") ?? "CBSE") as Board,
       exams: form.getAll("exams").map(String),
-      buddy: String(form.get("buddy") ?? "beerus") as BuddyId,
-      buddyName: String(form.get("buddyName") ?? "Beerus").trim(),
+      buddy: String(form.get("buddy") ?? "berrus") as BuddyId,
+      buddyName: String(form.get("buddyName") ?? "berrus").trim(),
       voice: String(form.get("voice") ?? ""),
       guardianEmail: String(form.get("guardianEmail") ?? "").trim(),
       guardianConsentAt: form.get("guardianConsent") === "on" ? new Date().toISOString() : undefined,
@@ -689,7 +689,7 @@ function App() {
             <Route path="/profile" element={<><ProfileRewardsSummary profile={profile} rewards={data.rewards} activities={data.activities} /><ProfilePage profile={profile} onSave={saveProfileAndReturnHome} theme={theme} onThemeChange={setTheme} onGradeChange={setBandPreviewGrade} /></>} />
             <Route path="/points" element={<RewardsPage rewards={data.rewards} activities={data.activities} />} />
             <Route path="/shop" element={<ShopPage rewards={data.rewards} profile={profile} onBuyFreeze={buyStreakFreeze} skin={shopSkin} avatar={shopAvatar} onPurchase={purchaseCosmetic} onEquipSkin={setShopSkin} onEquipAvatar={setShopAvatar} onSelectBuddy={(buddy) => {
-              const previousNameWasDefault = buddies.some((item) => item.label === profile.buddyName) || profile.buddyName === "Beerus";
+              const previousNameWasDefault = buddies.some((item) => item.label === profile.buddyName) || profile.buddyName === "berrus";
               void updateProfile({ ...profile, buddy, buddyName: previousNameWasDefault ? buddies.find((item) => item.id === buddy)?.label ?? BRAND.mascot : profile.buddyName });
             }} />} />
             <Route path="/feedback" element={<FeedbackPage initialFeature={searchParams.get("feature") ?? ""} junior={profile.grade <= 5} signedIn={Boolean(sessionUserId)} submitRemote={sessionUserId ? saveFeedback : undefined} loadRemote={sessionUserId ? fetchFeedback : undefined} />} />
@@ -748,7 +748,7 @@ function SetupScreen(props: {
             <label>School board<select name="board">{boards.map((board) => <option key={board.id} value={board.id}>{board.id}</option>)}</select></label>
             {grade >= 9 && <fieldset><legend>Competitive exams (optional)</legend>{exams.map((exam) => <label className="check-option" key={exam}><input type="checkbox" name="exams" value={exam} />{exam}</label>)}</fieldset>}
             <label>Learning buddy<select name="buddy">{buddies.map((buddy) => <option key={buddy.id} value={buddy.id}>{buddy.label}</option>)}</select></label>
-            <label>Buddy name<input name="buddyName" defaultValue="Beerus" maxLength={30} /></label>
+            <label>Buddy name<input name="buddyName" defaultValue="berrus" maxLength={30} /></label>
             <section className="guardian-consent">
               <span className="eyebrow">PARENT OR GUARDIAN</span>
               <p>For students in Classes 1–12, we ask for a parent or guardian email and consent. We collect only what is needed to set up this learning profile. Our team should review this flow against the Digital Personal Data Protection Act, 2023 before launch.</p>
@@ -802,7 +802,7 @@ function BuddyDock({ profile, pathname, topics }: {
   const buddy = buddies.find((item) => item.id === profile?.buddy) ?? buddies[0];
 
   useEffect(() => {
-    if (buddy.id !== "beerus") return undefined;
+    if (buddy.id !== "berrus") return undefined;
     if (mood === "snacking") {
       const snackTimer = window.setTimeout(() => setMood("awake"), 1500);
       return () => window.clearTimeout(snackTimer);
@@ -812,7 +812,7 @@ function BuddyDock({ profile, pathname, topics }: {
     return () => window.clearTimeout(timer);
   }, [buddy.id, mood, open]);
 
-  function feedBeerus() {
+  function feedberrus() {
     setMood("snacking");
   }
 
@@ -861,7 +861,7 @@ function BuddyDock({ profile, pathname, topics }: {
     ]);
 
   } catch (error) {
-    console.error("Beerus Error:", error);
+    console.error("berrus Error:", error);
 
     setMessages((items) => [
       ...items,
@@ -877,7 +877,7 @@ function BuddyDock({ profile, pathname, topics }: {
       {open && <section className="buddy-window" aria-label="QuestShala chat">
         <header className="buddy-window-head"><span className="buddy-orb"><CompanionAvatar id={profile?.selectedCharacterId ?? defaultCharacterId} size="small" /></span><div><strong>{profile?.buddyName ?? getLearningCharacter(profile?.selectedCharacterId).name}</strong><small>{getLearningCharacter(profile?.selectedCharacterId).title} · learning helper</small></div><button aria-label="Close buddy chat" onClick={() => setOpen(false)}><X size={18} /></button></header>
         <div className="buddy-thread" aria-live="polite">
-          {!messages.length && <div className="buddy-chat-intro"><strong>{buddy.id === "beerus" ? buddy.greeting : "Hi! What are you learning?"}</strong><p>{topic ? `We're ready to explore ${topic.title}.` : "Ask about lessons, notes, games, or your learning path."}</p><small>Ask Beerus anything about your learning.</small></div>}
+          {!messages.length && <div className="buddy-chat-intro"><strong>{buddy.id === "berrus" ? buddy.greeting : "Hi! What are you learning?"}</strong><p>{topic ? `We're ready to explore ${topic.title}.` : "Ask about lessons, notes, games, or your learning path."}</p><small>Ask berrus anything about your learning.</small></div>}
           {messages.map((message, index) => <p className={`chat-bubble ${message.by}`} key={`${index}-${message.text}`}>{message.text}</p>)}
         </div>
         <form className="chat-form" onSubmit={send}><input aria-label="Message your buddy" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question…" /><button className="btn violet" aria-label="Send message"><Send size={16} /></button></form>
@@ -885,7 +885,7 @@ function BuddyDock({ profile, pathname, topics }: {
       <button className={`buddy-launcher ${open ? "active" : ""}`} onClick={() => { setMood("awake"); setOpen((value) => !value); }} aria-label={open ? "Close buddy" : "Open learning buddy"} aria-expanded={open}>
         <span className={`buddy-launcher-face buddy-mood-${mood}`} aria-label={getLearningCharacter(profile?.selectedCharacterId).name}><CompanionAvatar id={profile?.selectedCharacterId ?? defaultCharacterId} size="small" /></span><span className="buddy-launcher-label">{open ? "Close" : "Ask buddy"}</span><MessageCircle className="buddy-launcher-icon" size={17} />
       </button>
-      {buddy.id === "beerus" && !open && <button className="buddy-snack" type="button" onClick={feedBeerus} aria-label="Give Beerus a snack" title="Give Beerus a snack"><Cookie size={16} /><span>{mood === "snacking" ? "Yum!" : "Snack"}</span></button>}
+      {buddy.id === "berrus" && !open && <button className="buddy-snack" type="button" onClick={feedberrus} aria-label="Give berrus a snack" title="Give berrus a snack"><Cookie size={16} /><span>{mood === "snacking" ? "Yum!" : "Snack"}</span></button>}
     </div>
   );
 }

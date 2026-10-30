@@ -43,10 +43,10 @@ export const officialSources = [
 
 export const buddies: { id: BuddyId; label: string; style: string; greeting?: string; specialties?: string[] }[] = [
   {
-    id: "beerus",
-    label: "Beerus",
+    id: "berrus",
+    label: "berrus",
     style: "friendly, supportive, and step-by-step",
-    greeting: "Hi, I’m Beerus. We can work through one idea at a time.",
+    greeting: "Hi, I’m berrus. We can work through one idea at a time.",
     specialties: ["Everyday questions", "Learning support", "Step-by-step hints"],
   },
   { id: "panda", label: "Panda Professor", style: "patient and encouraging" },

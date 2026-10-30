@@ -17,7 +17,7 @@ app.use(cors({
   origin(origin, callback) {
     // Allow non-browser clients (for example, local health checks).
     if (!origin || allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error("Origin not allowed by Beerus API CORS policy."));
+    return callback(new Error("Origin not allowed by berrus API CORS policy."));
   },
 }));
 app.use(express.json({ limit: "1mb" }));
@@ -25,7 +25,7 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "Beerus",
+    service: "berrus",
     configured: Boolean(process.env.GROQ_API_KEY),
   });
 });
@@ -40,7 +40,7 @@ app.post("/api/chat", async (req, res) => {
 
     if (!process.env.GROQ_API_KEY) {
       return res.status(503).json({
-        error: "Beerus AI is not configured. Add GROQ_API_KEY to server/.env and restart the server.",
+        error: "berrus AI is not configured. Add GROQ_API_KEY to server/.env and restart the server.",
       });
     }
 
@@ -51,7 +51,7 @@ app.post("/api/chat", async (req, res) => {
         {
           role: "system",
           content:
-            "You are Beerus, QuestShala's friendly learning companion. " +
+            "You are berrus, QuestShala's friendly learning companion. " +
             "Help students understand concepts, solve doubts, explain topics simply, " +
             "and encourage curiosity. Be accurate, age-appropriate, supportive, and clear. " +
             "When solving a problem, explain the steps instead of only giving the answer.",
@@ -64,18 +64,18 @@ app.post("/api/chat", async (req, res) => {
 
     const reply = completion.choices?.[0]?.message?.content;
     if (!reply) {
-      return res.status(502).json({ error: "Beerus received an empty response. Please try again." });
+      return res.status(502).json({ error: "berrus received an empty response. Please try again." });
     }
 
     return res.json({ reply });
   } catch (error) {
     console.error("Groq request failed:", error?.message || error);
     return res.status(500).json({
-      error: "Beerus is temporarily unavailable. Check the server terminal for details.",
+      error: "berrus is temporarily unavailable. Check the server terminal for details.",
     });
   }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Beerus backend running on http://localhost:${PORT}`);
+  console.log(`berrus backend running on http://localhost:${PORT}`);
 });

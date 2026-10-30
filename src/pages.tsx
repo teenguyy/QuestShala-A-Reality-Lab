@@ -46,7 +46,7 @@ export function LandingPage({ onStart, onSignIn }: {
         <div className="landing-copy"><span className="eyebrow">A BRIGHTER WAY TO LEARN</span><h1>Curiosity takes you <span>everywhere.</span></h1><p>Clear lessons, playful practice, and a friendly study buddy—all in one calm, personal learning space.</p><div className="landing-actions"><button className="btn violet" onClick={onStart}>Start exploring <span>→</span></button><a className="landing-secondary" href="#how-it-works">See how it works ↓</a></div><div className="landing-trust"><span><GraduationCap aria-hidden="true" /> Class-wise topics</span><span><Sparkles aria-hidden="true" /> Learn at your pace</span><span><Brain aria-hidden="true" /> Practice with purpose</span></div></div>
         <div className="landing-scene" aria-label="Animated learning adventure illustration">
           <div className="scene-sun" /><div className="scene-cloud cloud-one" /><div className="scene-cloud cloud-two" />
-          <div className="scene-planet" aria-hidden="true" /><div className="scene-character character-panda"><BuddyPortrait buddyId="beerus" label="Beerus" /></div><div className="scene-character character-fox" aria-hidden="true"><Sparkles /></div>
+          <div className="scene-planet" aria-hidden="true" /><div className="scene-character character-panda"><BuddyPortrait buddyId="berrus" label="berrus" /></div><div className="scene-character character-fox" aria-hidden="true"><Sparkles /></div>
           <span className="scene-star star-one" aria-hidden="true" /><span className="scene-star star-two" aria-hidden="true" /><div className="scene-book" aria-hidden="true"><BookOpen /></div>
         </div>
       </section>
@@ -514,7 +514,7 @@ export function BuddyPage({ profile, buddy, topics, characterId }: {
     event.preventDefault();
     const text = question.trim();
     if (!text || !topic) return;
-    const response = buddy.id === "beerus"
+    const response = buddy.id === "berrus"
       ? `Good question. Let's look at ${topic.title} one step at a time. ${topic.intro} Start here: ${topic.steps[0]}`
       : `${buddy.label} says: Let's look at ${topic.title}. ${topic.intro} ${topic.steps[0]}`;
     setReply(response);
@@ -631,7 +631,7 @@ export function PracticeZone({ profile, topics, recordActivity, onTestActive }: 
     const question = questions[index];
     return <main className={`practice-run ${mode === "test" ? "test-mode" : "quiz-mode"}`} aria-label={`${mode === "test" ? "Timed test" : "Quiz"} in progress`}>
       <header className="practice-run-header">
-        <div><span className="eyebrow">{mode === "test" ? "FOCUS MODE · NO CHAT HELP" : "QUIZ · BEERUS CAN HELP"}</span><h1>{selectedTopic.title}</h1><p>Class {profile.grade} · {selectedTopic.subject} · {level}</p></div>
+        <div><span className="eyebrow">{mode === "test" ? "FOCUS MODE · NO CHAT HELP" : "QUIZ · berrus CAN HELP"}</span><h1>{selectedTopic.title}</h1><p>Class {profile.grade} · {selectedTopic.subject} · {level}</p></div>
         {mode === "test" && <div className={`test-clock ${secondsLeft < 60 ? "urgent" : ""}`} aria-label={`${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} seconds remaining`}>{String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}</div>}
       </header>
       <div className="test-progress" role="progressbar" aria-label="Question progress" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={index + 1}><span style={{ width: `${((index + 1) / questions.length) * 100}%` }} /></div>
@@ -639,7 +639,7 @@ export function PracticeZone({ profile, topics, recordActivity, onTestActive }: 
         <div className="panel-head"><span className="tag">Question {index + 1} / {questions.length}</span><span className="tag">{mode === "test" ? `${level} test` : "Practice quiz"}</span></div>
         <h2>{question.prompt}</h2>
         <div className="answer-grid">{question.choices.map((choice, option) => <button key={choice} className={`answer-option ${answers[index] === option ? "chosen" : ""}`} aria-pressed={answers[index] === option} onClick={() => setAnswers((current) => ({ ...current, [index]: option }))}><span>{String.fromCharCode(65 + option)}.</span> {choice}</button>)}</div>
-        {mode === "quiz" && <details className="practice-hint"><summary>Ask Beerus for a hint</summary><p>{selectedTopic.intro} Start with: {selectedTopic.steps[0]}</p></details>}
+        {mode === "quiz" && <details className="practice-hint"><summary>Ask berrus for a hint</summary><p>{selectedTopic.intro} Start with: {selectedTopic.steps[0]}</p></details>}
         <div className="timed-test-footer"><button className="btn outline" disabled={index === 0} onClick={() => setIndex((current) => current - 1)}>← Previous</button><span>{Object.keys(answers).length} answered</span>{index < questions.length - 1 ? <button className="btn violet" onClick={() => setIndex((current) => current + 1)}>Next question →</button> : <button className="btn violet" onClick={() => void finish()}>Finish {mode === "test" ? "test" : "quiz"}</button>}</div>
         {index === questions.length - 1 && <button className="text-link" onClick={() => void finish()}>Submit now</button>}
       </section>

@@ -1,7 +1,7 @@
 export const BRAND = {
   name: "QuestShala",
   tagline: "Don't just learn it. Play it. Build it. Prove it.",
-  mascot: "Beerus Buddy",
+  mascot: "berrus Buddy",
 } as const;
 
 export const BRAND_ASSETS = {

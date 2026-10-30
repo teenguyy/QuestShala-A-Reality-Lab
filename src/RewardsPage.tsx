@@ -91,7 +91,7 @@ export function ShopPage({ rewards, profile, onBuyFreeze, skin, avatar, onPurcha
         </div>
       </section>
       <section className="shop-cosmetic-section">
-        <div className="section-heading"><h2><UserRound size={20} /> Learning buddies</h2><span className="tag">Active: {buddies.find((buddy) => buddy.id === profile.buddy)?.label ?? "Beerus"}</span></div>
+        <div className="section-heading"><h2><UserRound size={20} /> Learning buddies</h2><span className="tag">Active: {buddies.find((buddy) => buddy.id === profile.buddy)?.label ?? "berrus"}</span></div>
         <p className="shop-buddy-intro">Pick the voice and personality you want beside you. Every buddy is available; your choice is saved with your profile.</p>
         <div className="shop-buddy-grid">
           {buddies.map((buddy) => <article className={`panel shop-buddy-card ${profile.buddy === buddy.id ? "is-selected" : ""}`} key={buddy.id}>
