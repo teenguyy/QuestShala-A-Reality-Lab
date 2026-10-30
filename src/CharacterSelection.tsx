@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Award, BookOpen, Box, Check, Eye, Gamepad2, GraduationCap, Signal, Sparkles, Timer } from "lucide-react";
-import { defaultCharacterId, getLearningCharacter, learningCharacters } from "./characters";
+import { characterAssetPath, defaultCharacterId, getLearningCharacter, learningCharacters } from "./characters";
 import { CompanionAvatar } from "./CompanionAvatar";
 import type { LearningCharacterId, StudentProfile } from "./types";
 
@@ -54,7 +54,7 @@ export function CharacterSelectionPage({ profile, onChoose }: {
           return (
             <article key={character.id} className={`character-card ${isSelected ? "selected" : ""}`} style={{ "--character-accent": character.accentColor } as CSSProperties}>
               <div className="character-card-content">
-                <span className="character-card-art"><img className="character-card-portrait" src={`/companions/${character.id}.webp`} alt="" />{isSelected && <span className="character-selected-check" aria-label="Selected"><Check size={17} /></span>}</span>
+                <span className="character-card-art"><img className="character-card-portrait" src={characterAssetPath(character.id)} alt="" loading="lazy" />{isSelected && <span className="character-selected-check" aria-label="Selected"><Check size={17} /></span>}</span>
                 <span className="character-card-copy"><strong>{character.name}</strong><small>{character.title}</small><span className="character-class-range">{character.classRange}</span><span>{character.description}</span></span>
                 {character.id === defaultCharacterId && <span className="character-default-badge">Default companion</span>}
                 <span className="character-specialties">{character.specialties.map((specialty) => <span key={specialty}>{specialty}</span>)}</span>
@@ -80,7 +80,7 @@ export function CharacterSelectionPage({ profile, onChoose }: {
         <div className="character-specialties">{preview.specialties.map((specialty) => <span key={specialty}>{specialty}</span>)}</div>
         <p><strong>Sample explanation:</strong> {preview.sampleExplanation}</p>
         <button className="btn violet" type="button" onClick={() => { setSelectedId(preview.id); setNotice(""); setPreviewId(null); }}>Choose {preview.buttonLabel}</button>
-        <small>Character guidance is a selection profile; generative AI is not configured in this project.</small>
+        <small>Your companion's teaching style guides replies in the floating AI chat.</small>
       </dialog>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {notice && <p className="character-save-notice" role="status">{notice}</p>}

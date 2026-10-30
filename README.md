@@ -40,7 +40,9 @@ Auth configuration checks:
 - If Zen, Luna, Kai, Sora, Rex, or Miko is rejected, apply migration `005_expand_learning_characters.sql` after `004_learning_characters.sql`.
 - Authentication provider setup and actual email delivery must be verified in the target Supabase/Google projects; a successful frontend build does not verify them.
 
-The Supabase publishable/anon key is intended for browser use; never put a service-role key in the frontend. The Groq key belongs only in `server/.env`, which is ignored by Git. berrus calls the local Express API at `http://localhost:3001/api/chat`; keep the API server running while testing chat locally.
+The Supabase publishable/anon key is intended for browser use; never put a service-role key in the frontend. Chat calls the same-origin `/api/chat` endpoint. On Netlify, this is a server-side Function: set `GROQ_API_KEY` (Groq) or `XAI_API_KEY` (xAI/Grok) in the project's environment variables with Functions scope and redeploy. If both are set, Groq takes precedence. Keys must never use a `VITE_` prefix or appear in browser code. The Function uses the selected companion's teaching prompt.
+
+For local Groq development with the existing Express server, keep the key in the ignored `server/.env` file and run both `npm run server` and `npm run dev`; Vite proxies `/api` to that server. To test the deployed Function locally with either provider, use `netlify dev --port 8889` with the corresponding server-side environment variable configured.
 
 ## Implemented in this build
 
@@ -72,8 +74,7 @@ The Supabase publishable/anon key is intended for browser use; never put a servi
 - Progress does not yet include token spending, quests, streak awards, mastery, goals, or achievements. Token earnings are derived from correct practice answers only.
 - Activity history records lesson, quiz, and game events, but does not yet retain individual answer reviews, question-level mistakes, animation history, or test attempts.
 - Games now include quizzes, memory cards, and step ordering for authored topics. Drag-and-drop, broad subject-specific games, and interactive concept animations for every curriculum topic are not implemented yet.
-- The buddy answers from the included topic text/question bank and provides contextual navigation help; it is not a generative AI model and cannot answer arbitrary questions reliably. Companion portraits, greetings and teaching profiles are included, but no live AI provider is connected. Speech availability depends on the browser and operating system.
-- Companion descriptions, greetings and teaching prompts are configuration for a future AI integration. No AI backend exists in this project, so the current guided lesson helper does not send character prompts to a model or generate AI responses.
+- The floating buddy chat connects to Groq or xAI through a Netlify Function when a provider key is configured. Other guided lesson helpers and test reviews still use local content. AI answers may contain mistakes; speech availability depends on the browser and operating system.
 - The public page uses animated CSS/emoji illustrations; it is not a custom-rendered 3D animation.
 - Production persistence requires a configured Supabase project and applied migration. No Supabase credentials were supplied, so cloud authentication and storage could not be exercised here.
 - Child privacy, parental consent, and production deployment policies still require product/legal review.

@@ -1,10 +1,22 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "./backend";
+import { getGoogleSignInAvailability, supabase } from "./backend";
 import { boards } from "./data";
 import { BRAND, BRAND_ASSETS } from "./brand";
 
 type AuthPageName = "login" | "signup" | "forgot-password" | "reset-password" | "callback";
+
+function useGoogleAvailability() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    void getGoogleSignInAvailability(controller.signal).then((available) => {
+      if (!controller.signal.aborted) setEnabled(available);
+    });
+    return () => controller.abort();
+  }, []);
+  return enabled;
+}
 
 function safeDestination(value: unknown): string {
   if (typeof value !== "string") return "/dashboard";
@@ -28,12 +40,14 @@ function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <main className="auth-screen visible">
       <section className="auth-art" aria-label="Learning world illustration">
+        <img className="auth-study-photo" src="/images/study-library.jpg" alt="" />
         <div className="auth-orbit" aria-hidden="true" />
         <div className="auth-orbit orbit-b" aria-hidden="true" />
         <div className="auth-planet" aria-hidden="true">📚</div>
         <span className="auth-star star-a" aria-hidden="true">✦</span>
         <span className="auth-star star-b" aria-hidden="true">✧</span>
         <div className="auth-art-caption"><img className="auth-stacked-logo" src={BRAND_ASSETS.stackedLogo} alt={`${BRAND.name} — A Reality Lab`} /></div>
+        <div className="auth-story"><span>A REALITY LAB FOR CURIOUS MINDS</span><h2>Small discoveries.<br />Extraordinary possibilities.</h2><p>A place to ask questions, find your path, and make a little progress every day.</p></div>
       </section>
       <section className="auth-panel">
         <Link className="auth-brand brand-logo-plaque" to="/">
@@ -54,6 +68,7 @@ function AuthError({ children }: { children: ReactNode }) {
 }
 
 function LoginPage() {
+  const googleEnabled = useGoogleAvailability();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState("");
@@ -124,7 +139,7 @@ function LoginPage() {
         {error && <AuthError>{error}</AuthError>}
         <button className="btn violet auth-submit" type="submit" disabled={!supabase || busy}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
-      <button className="btn outline auth-google" type="button" disabled={!supabase || busy} onClick={() => void signInWithGoogle()}><span aria-hidden="true">G</span> Continue with Google</button>
+      {googleEnabled && <button className="btn outline auth-google" type="button" disabled={!supabase || busy} onClick={() => void signInWithGoogle()}><span aria-hidden="true">G</span> Continue with Google</button>}
       <p className="auth-switch">New to {BRAND.name}? <Link to="/signup">Create an account</Link></p>
       {!supabase && <p className="auth-switch">Just exploring? <Link to="/auth/signup">Continue as a guest demo</Link></p>}
     </AuthLayout>
@@ -132,6 +147,7 @@ function LoginPage() {
 }
 
 function SignupPage() {
+  const googleEnabled = useGoogleAvailability();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -234,7 +250,7 @@ function SignupPage() {
         {notice && <p className="auth-message" role="status">{notice}</p>}
         <button className="btn violet auth-submit" type="submit" disabled={!supabase || busy}>{busy ? "Creating account…" : "Create account"}</button>
       </form>
-      <button className="btn outline auth-google" type="button" disabled={!supabase || busy} onClick={() => void signInWithGoogle()}><span aria-hidden="true">G</span> Continue with Google</button>
+      {googleEnabled && <button className="btn outline auth-google" type="button" disabled={!supabase || busy} onClick={() => void signInWithGoogle()}><span aria-hidden="true">G</span> Continue with Google</button>}
       <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
       {!supabase && <p className="auth-switch">Just exploring? <Link to="/auth/signup">Continue as a guest demo</Link></p>}
     </AuthLayout>

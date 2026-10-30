@@ -1,13 +1,22 @@
+import { Component, Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   Award, BookOpen, Castle, Compass, FlaskConical, Flower2, LibraryBig,
-  Map, NotebookPen, ScrollText, Shield, ShoppingBag, Sparkles, Swords,
+  ArrowUpRight, Map, Minus, NotebookPen, Pause, Play, Plus, RotateCcw, RotateCw, ScrollText, Shield, ShoppingBag, Sparkles, Swords,
 } from "lucide-react";
 import { CompanionAvatar } from "./CompanionAvatar";
 import { getLearningCharacter } from "./characters";
 import type { Activity, RewardsState, StudentProfile } from "./types";
 import { curriculum, type TopicContent } from "./data";
 import { getCurrentStreak, getRank, getPointsBalance, xpToNextLevel } from "./rewards/engine";
+
+const KingdomScene = lazy(() => import("./components/KingdomScene"));
+
+class SceneBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
 
 function totalXp(rewards: RewardsState): number {
   return rewards.ledger.filter((entry) => entry.type === "xp").reduce((sum, entry) => sum + entry.amount, 0);
@@ -120,48 +129,60 @@ export function KingdomMapPage({ profile, activities, topics }: {
   activities: Activity[];
   topics: TopicContent[];
 }) {
+  const [selected, setSelected] = useState(0);
+  const [rotation, setRotation] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [unavailable, setUnavailable] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const change = () => setReducedMotion(query.matches);
+    query.addEventListener("change", change);
+    return () => query.removeEventListener("change", change);
+  }, []);
   const completedTopics = new Set(activities.filter((item) => item.kind === "lesson").map((item) => item.topic));
   const completedCount = topics.filter((topic) => completedTopics.has(topic.id)).length;
   const nextTopic = topics.find((topic) => !completedTopics.has(topic.id));
+  const destinations = locations.map((location) => ({
+    ...location,
+    destination: "subject" in location ? getSubjectDestination(profile, topics, location.subject, "practice" in location && location.practice) : location.to,
+  }));
+  const current = destinations[selected];
+  const CurrentIcon = current.icon;
+  const fallback = <div className="atlas-fallback"><Compass size={40} /><h2>Your realm is ready.</h2><p>Choose a destination below to start exploring. The destination list works without 3D graphics.</p></div>;
   return (
-    <main className="kingdom-map-page">
-      <header className="page-title"><div><span className="eyebrow">THE SHARED REALM · CLASS {profile.grade}</span><h1>Kingdom Map</h1><p>One kingdom for every learner. Choose a real destination to study, practise, or review your progress.</p></div><span className="kingdom-status-tag">{completedCount} reviewed lessons completed</span></header>
-      <section className="kingdom-map-scene" aria-label="Interactive fantasy kingdom map">
-        <div className="map-sky-stars" aria-hidden="true" />
-        <div className="map-cloud cloud-a" aria-hidden="true" />
-        <div className="map-cloud cloud-b" aria-hidden="true" />
-        <div className="map-cloud cloud-c" aria-hidden="true" />
-        <div className="map-mountains map-mountains-far" aria-hidden="true" />
-        <div className="map-mountains map-mountains-near" aria-hidden="true" />
-        <div className="map-river" aria-hidden="true" />
-        <div className="map-waterfall waterfall-left" aria-hidden="true" />
-        <div className="map-waterfall waterfall-right" aria-hidden="true" />
-        <div className="map-path" aria-hidden="true" />
-        <div className="map-float-island island-left" aria-hidden="true"><span className="island-tree tree-a" /><span className="island-tree tree-b" /><span className="island-tree tree-c" /></div>
-        <div className="map-float-island island-right" aria-hidden="true"><span className="island-tree tree-a" /><span className="island-tree tree-b" /></div>
-        <div className="map-scene-castle" aria-hidden="true"><i /><i /><b /></div>
-        <div className="map-forest forest-left" aria-hidden="true"><span /><span /><span /><span /></div>
-        <div className="map-forest forest-right" aria-hidden="true"><span /><span /><span /><span /></div>
-        <span className="map-sparkle sparkle-a" aria-hidden="true">✦</span>
-        <span className="map-sparkle sparkle-b" aria-hidden="true">✦</span>
-        <span className="map-sparkle sparkle-c" aria-hidden="true">✧</span>
-        <span className="map-scene-label map-label-castle">THE KNOWLEDGE REALM</span>
-        <div className="kingdom-map-locations">
-          {locations.map((location) => {
-            const { title, subtitle, icon: Icon, tone } = location;
-            const destination = "subject" in location ? getSubjectDestination(profile, topics, location.subject, "practice" in location && location.practice) : location.to;
-            return <Link className={`kingdom-location kingdom-location-${tone}`} to={destination} key={title}>
-              <span className="kingdom-location-icon"><Icon size={20} /></span><span className="kingdom-location-copy"><strong>{title}</strong><small>{subtitle}</small></span><span className="kingdom-location-arrow" aria-hidden="true">↗</span>
-            </Link>;
-          })}
+    <main className="kingdom-map-page premium-atlas">
+      <header className="atlas-heading"><div><span className="atlas-kicker"><Compass size={14} /> THE EXPLORER’S ATLAS</span><h1>A world worth discovering.</h1><p>Follow your curiosity. Every corner of the kingdom opens a new way to learn.</p></div><div className="atlas-class-seal"><span>YOUR REALM</span><strong>Class {profile.grade}</strong><small>{profile.board}</small></div></header>
+      <section className="atlas-world" aria-label="Kingdom map and destinations">
+        <div className="atlas-viewport">
+          <div className="atlas-scene-caption"><span className="atlas-live-dot" /> KINGDOM OF QUESTSHALA <small>Interactive 3D atlas</small></div>
+          <div className="atlas-canvas" aria-label="Drag to rotate the 3D kingdom. Select buildings or use the destination buttons below.">
+            {unavailable ? fallback : <SceneBoundary fallback={fallback}><Suspense fallback={<div className="atlas-loading" role="status"><Compass size={32} /><span>Unfolding your world…</span></div>}><KingdomScene selected={selected} onSelect={setSelected} rotation={rotation} zoom={zoom} motion={!paused && !reducedMotion} onUnavailable={() => setUnavailable(true)} /></Suspense></SceneBoundary>}
+          </div>
+          <span className="atlas-compass" aria-hidden="true"><span>N</span><Compass size={35} strokeWidth={1} /></span>
+          <div className="atlas-map-hint">Drag to explore · Select a building</div>
+          <div className="atlas-controls" role="group" aria-label="Map controls">
+            <button type="button" aria-label="Rotate map left" onClick={() => setRotation((value) => value - Math.PI / 6)}><RotateCcw size={17} /></button>
+            <button type="button" aria-label="Rotate map right" onClick={() => setRotation((value) => value + Math.PI / 6)}><RotateCw size={17} /></button>
+            <span />
+            <button type="button" aria-label="Zoom out" disabled={zoom <= .8} onClick={() => setZoom((value) => Math.max(.8, value - .15))}><Minus size={17} /></button>
+            <button type="button" aria-label="Zoom in" disabled={zoom >= 1.6} onClick={() => setZoom((value) => Math.min(1.6, value + .15))}><Plus size={17} /></button>
+            <span />
+            <button type="button" aria-label={paused ? "Play map animation" : "Pause map animation"} disabled={reducedMotion} aria-pressed={paused || reducedMotion} onClick={() => setPaused((value) => !value)}>{paused || reducedMotion ? <Play size={17} /> : <Pause size={17} />}</button>
+          </div>
         </div>
+        <aside className="atlas-travel-panel">
+          <div className="atlas-panel-top"><span className="atlas-kicker">YOUR NEXT DISCOVERY</span><span className="atlas-location-number">{String(selected + 1).padStart(2, "0")} / 09</span></div>
+          <div className="atlas-destination-emblem"><CurrentIcon size={42} strokeWidth={1.1} /></div>
+          <div className="atlas-destination-detail" aria-live="polite"><h2>{current.title}</h2><p>{current.subtitle}. Your next chapter starts here.</p></div>
+          <Link className="atlas-enter" to={current.destination}>Explore destination <ArrowUpRight size={19} /></Link>
+          <div className="atlas-travel-note"><Shield size={16} /><span>Every destination is open.<br />Explore at your own pace.</span></div>
+          <div className="atlas-progress"><span>YOUR LEARNING JOURNEY</span><strong>{completedCount}<small> / {topics.length} reviewed lessons</small></strong><div className="atlas-progress-track"><i style={{ width: `${topics.length ? completedCount / topics.length * 100 : 0}%` }} /></div></div>
+        </aside>
       </section>
-      <section className="kingdom-map-objective">
-        <span className="kingdom-objective-icon"><Sparkles /></span>
-        <div><span className="eyebrow">YOUR NEXT OBJECTIVE</span><h2>{nextTopic ? `Learn ${nextTopic.title}` : "Choose what to explore next"}</h2><p>{nextTopic ? `${nextTopic.subject} · A reviewed lesson from your Class ${profile.grade} learning path.` : "Browse the class map or revisit your notes and practice."}</p></div>
-        <Link className="btn kingdom-button" to={nextTopic ? `/topic/${nextTopic.id}` : "/syllabus"}>{nextTopic ? "Start quest →" : "Explore topics →"}</Link>
-      </section>
-      <p className="kingdom-map-access-note">All destinations shown here lead to existing learning features. Progress-based locks are not enabled, so destinations stay open rather than showing invented unlock states.</p>
+      <section className="atlas-destinations" aria-label="Choose a map destination"><div className="atlas-section-heading"><h2>Where to next?</h2><span>NINE PLACES. ENDLESS CURIOSITY.</span></div><div className="atlas-destination-grid">{destinations.map(({ title, subtitle, icon: Icon }, index) => <button key={title} type="button" className={`atlas-destination ${selected === index ? "selected" : ""}`} aria-pressed={selected === index} onClick={() => setSelected(index)}><span className="atlas-destination-symbol"><Icon size={21} strokeWidth={1.5} /></span><span><strong>{title}</strong><small>{subtitle}</small></span><span className="atlas-grid-number">{String(index + 1).padStart(2, "0")}</span></button>)}</div></section>
+      <section className="atlas-next-quest"><img src="/images/woodland.jpg" alt="Sunlit woodland with deer among the trees" loading="lazy" /><div><span className="atlas-kicker"><Sparkles size={13} /> A LITTLE PROGRESS, EVERY DAY</span><h2>{nextTopic ? `Discover ${nextTopic.title}` : "Your adventure starts with a question."}</h2><p>{nextTopic ? `${nextTopic.subject} · A reviewed lesson for Class ${profile.grade}.` : "Choose a subject, revisit your notes, or challenge yourself in the Quest Arena."}<br />Take the next step at your own pace.</p><Link to={nextTopic ? `/topic/${nextTopic.id}` : "/syllabus"}>{nextTopic ? "Begin this lesson" : "Explore your class topics"} <ArrowUpRight size={17} /></Link></div></section>
     </main>
   );
 }

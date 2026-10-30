@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { getLearningCharacter } from "./characters";
+import { characterAssetPath, getLearningCharacter } from "./characters";
 import type { LearningCharacterId } from "./types";
 
 export function CompanionAvatar({ id, size = "large" }: {
@@ -13,7 +13,7 @@ export function CompanionAvatar({ id, size = "large" }: {
       style={{ "--character-accent": character.accentColor } as CSSProperties}
       aria-hidden="true"
     >
-      <img className="character-avatar-photo" src={`/companions/${character.id}.webp`} alt="" />
+      <img className="character-avatar-photo" src={characterAssetPath(character.id)} alt="" />
     </span>
   );
 }
