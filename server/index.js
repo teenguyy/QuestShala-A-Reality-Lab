@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3001);
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-]);
+].filter(Boolean));
 
 app.use(cors({
   origin(origin, callback) {
@@ -76,6 +76,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Beerus backend running on http://localhost:${PORT}`);
 });
